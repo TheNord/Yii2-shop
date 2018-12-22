@@ -4,12 +4,20 @@ namespace shop\repositories;
 
 use shop\entities\User\User;
 
+use shop\entities\User\User;
+
 class UserRepository
 {
     public function findByUsernameOrEmail($value): ?User
     {
         return User::find()->andWhere(['or', ['username' => $value], ['email' => $value]])->one();
     }
+
+    public function findByNetworkIdentity($network, $identity): ?User
+    {
+        return User::find()->joinWith('networks n')->andWhere(['n.network' => $network, 'n.identity' => $identity])->one();
+    }
+
 
     public function getByEmailConfirmToken($token): User
     {

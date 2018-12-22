@@ -12,7 +12,7 @@ class m181222_162053_rename_user_table extends Migration
      */
     public function safeUp()
     {
-
+        $this->renameTable('{{%user}}', '{{%users}}');
     }
 
     /**
@@ -20,9 +20,7 @@ class m181222_162053_rename_user_table extends Migration
      */
     public function safeDown()
     {
-        echo "m181222_162053_rename_user_table cannot be reverted.\n";
-
-        return false;
+        $this->renameTable('{{%users}}', '{{%user}}');
     }
 
     /*
