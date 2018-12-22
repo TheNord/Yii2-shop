@@ -1,8 +1,8 @@
 <?php
 
-namespace common\services;
+namespace shop\services\auth;
 
-use shop\entities\User;
+use shop\entities\User\User;
 use shop\forms\auth\LoginForm;
 use shop\repositories\UserRepository;
 
