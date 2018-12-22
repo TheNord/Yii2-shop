@@ -18,6 +18,11 @@ class UserRepository
         return User::find()->joinWith('networks n')->andWhere(['n.network' => $network, 'n.identity' => $identity])->one();
     }
 
+    public function get($id): User
+    {
+        return $this->getBy(['id' => $id]);
+    }
+
 
     public function getByEmailConfirmToken($token): User
     {
@@ -43,6 +48,13 @@ class UserRepository
     {
         if (!$user->save()) {
             throw new \RuntimeException('Saving error.');
+        }
+    }
+
+    public function remove(User $user): void
+    {
+        if (!$user->delete()) {
+            throw new \RuntimeException('Removing error.');
         }
     }
 
