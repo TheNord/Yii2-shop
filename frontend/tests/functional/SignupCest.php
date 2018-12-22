@@ -47,11 +47,11 @@ class SignupCest
             'SignupForm[password]' => 'tester_password',
         ]);
 
-        $I->seeRecord('common\entities\user', [
+        $I->seeRecord('common\entities\User', [
             'username' => 'tester',
             'email' => 'tester.email@example.com',
         ]);
 
-        $I->see('Logout (tester)', 'form button[type=submit]');
+        $I->see('Check your email for further instructions.');
     }
 }
