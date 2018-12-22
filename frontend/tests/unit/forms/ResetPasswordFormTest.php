@@ -1,6 +1,6 @@
 <?php
 
-namespace frontend\tests\unit\models;
+namespace frontend\tests\unit\forms;
 
 use common\fixtures\UserFixture;
 use frontend\forms\ResetPasswordForm;
@@ -23,7 +23,7 @@ class ResetPasswordFormTest extends \Codeception\Test\Unit
         ]);
     }
 
-    public function testResetWrongToken()
+    public function testWrongToken()
     {
         $this->tester->expectException('yii\base\InvalidParamException', function() {
             new ResetPasswordForm('');
@@ -34,11 +34,12 @@ class ResetPasswordFormTest extends \Codeception\Test\Unit
         });
     }
 
-    public function testResetCorrectToken()
+    public function testCorrectToken()
     {
         $user = $this->tester->grabFixture('user', 0);
         $form = new ResetPasswordForm($user['password_reset_token']);
-        expect_that($form->resetPassword());
+        $form->password = 'new-password';
+        expect_that($form->validate());
     }
 
 }
