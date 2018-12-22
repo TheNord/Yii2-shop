@@ -5,7 +5,7 @@ return [
     'components' => [
         'user' => [
             'class' => 'yii\web\User',
-            'identityClass' => 'common\entities\user',
+            'identityClass' => 'shop\entities\User',
         ],
         'request' => [
             'cookieValidationKey' => '324234fgfdg346346aa',

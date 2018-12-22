@@ -1,9 +1,7 @@
 <?php
-namespace common\forms;
+namespace shop\forms\auth;
 
-use Yii;
 use yii\base\Model;
-use common\entities\User;
 
 /**
  * Login form
