@@ -41,7 +41,7 @@ class ProductManageService
 
     public function create(ProductCreateForm $form): Product
     {
-        // находим брэнд
+        // находим бренд
         $brand = $this->brands->get($form->brandId);
         // находим основную категорию во вложенной форме
         $category = $this->categories->get($form->categories->main);

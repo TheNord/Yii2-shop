@@ -15,10 +15,18 @@ class ProductRepository
         return $product;
     }
 
+    /** Проверка на существование товаров в бренде */
     public function existsByBrand($id): bool
     {
         return Product::find()->andWhere(['brand_id' => $id])->exists();
     }
+
+    /** Проверка на существование товаров в категории */
+    public function existsByMainCategory($id): bool
+    {
+        return Product::find()->andWhere(['category_id' => $id])->exists();
+    }
+
 
     public function save(Product $product): void
     {

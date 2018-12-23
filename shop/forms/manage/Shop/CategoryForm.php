@@ -6,6 +6,7 @@ use shop\entities\Shop\Category;
 use shop\forms\CompositeForm;
 use shop\forms\manage\MetaForm;
 use shop\validators\SlugValidator;
+use yii\helpers\ArrayHelper;
 
 /**
  * @property MetaForm $meta;
@@ -47,6 +48,16 @@ class CategoryForm extends CompositeForm
             ['slug', SlugValidator::class],
             [['name', 'slug'], 'unique', 'targetClass' => Category::class, 'filter' => $this->_category ? ['<>', 'id', $this->_category->id] : null]
         ];
+    }
+
+    /** Список родительских категорий */
+    public function parentCategoriesList(): array
+    {
+        // извлекаем родительские категории в массив, подставляя в ключ - id
+        return ArrayHelper::map(Category::find()->orderBy('lft')->asArray()->all(), 'id', function (array $category) {
+            // добавляем "-- " для удобного отображения глубины вложенности категорий
+            return ($category['depth'] > 1 ? str_repeat('-- ', $category['depth'] - 1) . ' ' : '') . $category['name'];
+        });
     }
 
     /** Добавляем вложенную форму */

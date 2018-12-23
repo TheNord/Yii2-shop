@@ -51,7 +51,7 @@ class BrandManageService
     public function remove($id): void
     {
         $brand = $this->brands->get($id);
-        // проверяем на наличие товаров по указанному брэнду
+        // проверяем на наличие товаров по указанному бренду
         if ($this->products->existsByBrand($brand->id)) {
             throw new \DomainException('Unable to remove brand with products.');
         }
