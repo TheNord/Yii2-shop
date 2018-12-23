@@ -24,7 +24,8 @@
         "yiisoft/yii2-authclient": "^2.1",
         "kartik-v/yii2-widgets": "^3.4",
         "kartik-v/yii2-field-range": "*",
-        "paulzi/yii2-nested-sets": "^1.1"
+        "paulzi/yii2-nested-sets": "^1.1",
+        "yii-dream-team/yii2-upload-behavior": "^1.2"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.0.0",
