@@ -24,6 +24,11 @@ class UserSearch extends Model
         ];
     }
 
+    public function formName()
+    {
+        return 's';
+    }
+
     /**
      * @param array $params
      * @return ActiveDataProvider
