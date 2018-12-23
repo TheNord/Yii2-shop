@@ -21,6 +21,8 @@ use yii\web\UploadedFile;
  * @property integer $price_old
  * @property integer $price_new
  * @property integer $rating
+ * @property integer $main_photo_id
+ * @property string $description
  *
  * @property Meta $meta
  * @property Brand $brand
@@ -37,23 +39,25 @@ class Product extends ActiveRecord
 {
     public $meta;
 
-    public static function create($brandId, $categoryId, $code, $name, Meta $meta): self
+    public static function create($brandId, $categoryId, $code, $name, $description, Meta $meta): self
     {
         $product = new static();
         $product->brand_id = $brandId;
         $product->category_id = $categoryId;
         $product->code = $code;
         $product->name = $name;
+        $product->description = $description;
         $product->meta = $meta;
         $product->created_at = time();
         return $product;
     }
 
-    public function edit($brandId, $code, $name, Meta $meta): void
+    public function edit($brandId, $code, $name, $description, Meta $meta): void
     {
         $this->brand_id = $brandId;
         $this->code = $code;
         $this->name = $name;
+        $this->description = $description;
         $this->meta = $meta;
     }
 
@@ -226,6 +230,7 @@ class Product extends ActiveRecord
         }
         // присваиваем обратно в photos
         $this->photos = $photos;
+        $this->populateRelation('mainPhoto', reset($photos));
     }
 
     // Тэги
@@ -469,6 +474,12 @@ class Product extends ActiveRecord
         return $this->hasMany(Photo::class, ['product_id' => 'id'])->orderBy('sort');
     }
 
+    /** Получаем основную фотографию (для вывода на главных страницах) */
+    public function getMainPhoto(): ActiveQuery
+    {
+        return $this->hasOne(Photo::class, ['id' => 'main_photo_id']);
+    }
+
     public function getTagAssignments(): ActiveQuery
     {
         return $this->hasMany(TagAssignment::class, ['product_id' => 'id']);
@@ -515,5 +526,15 @@ class Product extends ActiveRecord
         return [
             self::SCENARIO_DEFAULT => self::OP_ALL,
         ];
+    }
+
+    public function afterSave($insert, $changedAttributes): void
+    {
+        $related = $this->getRelatedRecords();
+        if (array_key_exists('mainPhoto', $related)) {
+            // генерируем голый sql запрос чтобы избежать зацикливания
+            $this->updateAttributes(['main_photo_id' => $related['mainPhoto'] ? $related['mainPhoto']->id : null]);
+        }
+        parent::afterSave($insert, $changedAttributes);
     }
 }
