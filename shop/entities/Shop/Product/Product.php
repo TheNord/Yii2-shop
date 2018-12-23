@@ -498,11 +498,13 @@ class Product extends ActiveRecord
     public function behaviors(): array
     {
         return [
+            // Подключаем поведение (для мета данных)
             MetaBehavior::className(),
             [
-                // Подключаем поведение (для мета данных)
+                // Подключаем сохранение для связанных таблиц
+                // дает возможность сохранить информацию в связывающую таблицу
+                // $this->reviews = $reviews;
                 'class' => SaveRelationsBehavior::className(),
-                // Сохранение связи с таблицами
                 'relations' => ['categoryAssignments', 'tagAssignments', 'relatedAssignments', 'modifications', 'values', 'photos', 'reviews'],
             ],
         ];
