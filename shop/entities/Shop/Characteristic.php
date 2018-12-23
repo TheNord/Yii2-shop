@@ -1,0 +1,70 @@
+<?php
+
+namespace shop\entities\Shop;
+
+use yii\db\ActiveRecord;
+use yii\helpers\Json;
+
+/**
+ * @property integer $id
+ * @property string $name
+ * @property string $type
+ * @property string $required
+ * @property string $default
+ * @property array $variants
+ * @property integer $sort
+ */
+class Characteristic extends ActiveRecord
+{
+    const TYPE_STRING = 'string';
+    const TYPE_INTEGER = 'integer';
+    const TYPE_FLOAT = 'float';
+
+    public $variants;
+
+    public static function create($name, $type, $required, $default, array $variants, $sort): self
+    {
+        $object = new static();
+        $object->name = $name;
+        $object->type = $type;
+        $object->required = $required;
+        $object->default = $default;
+        $object->variants = $variants;
+        $object->sort = $sort;
+        return $object;
+    }
+
+    public function edit($name, $type, $required, $default, array $variants, $sort): void
+    {
+        $this->name = $name;
+        $this->type = $type;
+        $this->required = $required;
+        $this->default = $default;
+        $this->variants = $variants;
+        $this->sort = $sort;
+    }
+
+    public function isSelect(): bool
+    {
+        return count($this->variants) > 0;
+    }
+
+    public static function tableName(): string
+    {
+        return '{{%shop_characteristics}}';
+    }
+
+    /** Декодируем поле variants_json при поиске */
+    public function afterFind(): void
+    {
+        $this->variants = Json::decode($this->getAttribute('variants_json'));
+        parent::afterFind();
+    }
+
+    /** Кодируем поле variants_json при сохранении */
+    public function beforeSave($insert): bool
+    {
+        $this->setAttribute('variants_json', Json::encode($this->variants));
+        return parent::beforeSave($insert);
+    }
+}
