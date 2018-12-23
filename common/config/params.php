@@ -7,4 +7,6 @@ return [
     'cookieValidationKey' => 'W2lA0OFx-x-5P3Tzv-E8Wi7SNiA1THxB',
     'frontendHostInfo' => 'http://shop.me',
     'backendHostInfo' => 'http://backend.shop.me',
+    'staticHostInfo' => 'http://static.shop.me',
+    'staticPath' => dirname(__DIR__, 2) . '/static',
 ];

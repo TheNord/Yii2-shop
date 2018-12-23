@@ -110,6 +110,8 @@ class ProductManageService
     {
         $product = $this->products->get($id);
         $brand = $this->brands->get($form->brandId);
+        $category = $this->categories->get($form->categories->main);
+
         $product->edit(
             $brand->id,
             $form->code,
@@ -121,6 +123,17 @@ class ProductManageService
                 $form->meta->keywords
             )
         );
+
+        // изменяем основную категорию
+        $product->changeMainCategory($category->id);
+        // удаляем дополнительные категории
+        $product->revokeCategories();
+
+        // перезаписываем новые категории
+        foreach ($form->categories->others as $otherId) {
+            $category = $this->categories->get($otherId);
+            $product->assignCategory($category->id);
+        }
 
         foreach ($form->values as $value) {
             $product->setValue($value->id, $value->value);
@@ -144,27 +157,6 @@ class ProductManageService
             }
             $this->products->save($product);
         });
-    }
-
-
-    /** Изменение категорий */
-    public function changeCategories($id, CategoriesForm $form): void
-    {
-        $product = $this->products->get($id);
-        $category = $this->categories->get($form->main);
-
-        // изменяем основную категорию
-        $product->changeMainCategory($category->id);
-        // удаляем дополнительные категории
-        $product->revokeCategories();
-
-        // перезаписываем новые категории
-        foreach ($form->others as $otherId) {
-            $category = $this->categories->get($otherId);
-            $product->assignCategory($category->id);
-        }
-
-        $this->products->save($product);
     }
 
     // Фотографии
