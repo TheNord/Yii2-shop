@@ -127,28 +127,34 @@ class ProductManageService
 
         // изменяем основную категорию
         $product->changeMainCategory($category->id);
-        // удаляем дополнительные категории
-        $product->revokeCategories();
-
-        // перезаписываем новые категории
-        foreach ($form->categories->others as $otherId) {
-            $category = $this->categories->get($otherId);
-            $product->assignCategory($category->id);
-        }
-
-        foreach ($form->values as $value) {
-            $product->setValue($value->id, $value->value);
-        }
-
-        // перед установкой тэгов удаляем их
-        $product->revokeTags();
-        // заполняем тэги заного
-        foreach ($form->tags->existing as $tagId) {
-            $tag = $this->tags->get($tagId);
-            $product->assignTag($tag->id);
-        }
 
         $this->transaction->wrap(function () use ($product, $form) {
+
+            // удаляем категории и тэги
+            $product->revokeCategories();
+            $product->revokeTags();
+
+            // сохраняем предварительно
+            $this->products->save($product);
+
+            // устанавливаем через связь категории заного
+            foreach ($form->categories->others as $otherId) {
+                $category = $this->categories->get($otherId);
+                $product->assignCategory($category->id);
+            }
+
+            // устанавливаем значения атрибутов
+            foreach ($form->values as $value) {
+                $product->setValue($value->id, $value->value);
+            }
+
+            // устанавливаем старые тэги
+            foreach ($form->tags->existing as $tagId) {
+                $tag = $this->tags->get($tagId);
+                $product->assignTag($tag->id);
+            }
+
+            // устанавливаем новые тэги
             foreach ($form->tags->newNames as $tagName) {
                 if (!$tag = $this->tags->findByName($tagName)) {
                     $tag = Tag::create($tagName, $tagName);
@@ -156,6 +162,8 @@ class ProductManageService
                 }
                 $product->assignTag($tag->id);
             }
+
+            // сохраняем
             $this->products->save($product);
         });
     }

@@ -12,11 +12,13 @@ return [
     'bootstrap' => [
         'log',
         'common\bootstrap\SetUp',
+        'frontend\bootstrap\SetUp',
     ],
     'aliases' => [
         '@staticRoot' => $params['staticPath'],
         '@static'   => $params['staticHostInfo'],
     ],
+    'layout' => 'blank',
     'controllerNamespace' => 'frontend\controllers',
     'components' => [
         'request' => [
@@ -26,7 +28,6 @@ return [
             'identityClass' => 'shop\entities\User\User',
             'enableAutoLogin' => true,
             'identityCookie' => ['name' => '_identity', 'httpOnly' => true, 'domain' => '.shop.me'],
-            'loginUrl' => ['auth/auth/login'],
         ],
         'session' => [
             // this is the name of the session cookie used for login on the frontend
