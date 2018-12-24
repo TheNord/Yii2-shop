@@ -7,6 +7,7 @@ use lhs\Yii2SaveRelationsBehavior\SaveRelationsBehavior;
 use shop\entities\Meta;
 use shop\entities\Shop\Brand;
 use shop\entities\Shop\Category;
+use shop\entities\Shop\Product\queries\ProductQuery;
 use shop\entities\Shop\Tag;
 use yii\db\ActiveQuery;
 use yii\db\ActiveRecord;
@@ -25,6 +26,7 @@ use yii\web\UploadedFile;
  * @property integer $rating
  * @property integer $main_photo_id
  * @property string $description
+ * @property integer $status
  *
  * @property Meta $meta
  * @property Brand $brand
@@ -42,6 +44,9 @@ use yii\web\UploadedFile;
  */
 class Product extends ActiveRecord
 {
+    const STATUS_DRAFT = 0;
+    const STATUS_ACTIVE = 1;
+
     public $meta;
 
     public static function create($brandId, $categoryId, $code, $name, $description, Meta $meta): self
@@ -53,6 +58,7 @@ class Product extends ActiveRecord
         $product->name = $name;
         $product->description = $description;
         $product->meta = $meta;
+        $product->status = self::STATUS_DRAFT;
         $product->created_at = time();
         return $product;
     }
@@ -64,6 +70,32 @@ class Product extends ActiveRecord
         $this->name = $name;
         $this->description = $description;
         $this->meta = $meta;
+    }
+
+    public function activate(): void
+    {
+        if ($this->isActive()) {
+            throw new \DomainException('Product is already active.');
+        }
+        $this->status = self::STATUS_ACTIVE;
+    }
+
+    public function draft(): void
+    {
+        if ($this->isDraft()) {
+            throw new \DomainException('Product is already draft.');
+        }
+        $this->status = self::STATUS_DRAFT;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status == self::STATUS_ACTIVE;
+    }
+
+    public function isDraft(): bool
+    {
+        return $this->status == self::STATUS_DRAFT;
     }
 
     public function setPrice($new, $old): void
@@ -451,6 +483,11 @@ class Product extends ActiveRecord
         $this->rating = $amount ? $total / $amount : null;
     }
 
+    public static function find(): ProductQuery
+    {
+        return new ProductQuery(static::class);
+    }
+
     ##########################
     // Связь с брендом, категорией и дополнительными категориями
 
@@ -564,11 +601,15 @@ class Product extends ActiveRecord
 
     public function afterSave($insert, $changedAttributes): void
     {
+        // получаем связанные записи
         $related = $this->getRelatedRecords();
+
+        parent::afterSave($insert, $changedAttributes);
+
+        // добавляем главное фото к товару
         if (array_key_exists('mainPhoto', $related)) {
             // генерируем голый sql запрос чтобы избежать зацикливания
             $this->updateAttributes(['main_photo_id' => $related['mainPhoto'] ? $related['mainPhoto']->id : null]);
         }
-        parent::afterSave($insert, $changedAttributes);
     }
 }
