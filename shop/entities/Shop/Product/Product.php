@@ -7,8 +7,10 @@ use lhs\Yii2SaveRelationsBehavior\SaveRelationsBehavior;
 use shop\entities\Meta;
 use shop\entities\Shop\Brand;
 use shop\entities\Shop\Category;
+use shop\entities\Shop\Tag;
 use yii\db\ActiveQuery;
 use yii\db\ActiveRecord;
+use yii\db\Exception;
 use yii\web\UploadedFile;
 
 /**
@@ -27,11 +29,14 @@ use yii\web\UploadedFile;
  * @property Meta $meta
  * @property Brand $brand
  * @property Category $category
+ * @property Category[] $categories
  * @property CategoryAssignment[] $categoryAssignments
+ * @property Tag[] $tags
  * @property TagAssignment[] $tagAssignments
  * @property RelatedAssignment[] $relatedAssignments
  * @property Modification[] $modifications
  * @property Value[] $values
+ * @property Photo $mainPhoto
  * @property Photo[] $photos
  * @property Review[] $reviews
  */
@@ -313,7 +318,7 @@ class Product extends ActiveRecord
         throw new \DomainException('Modification is not found.');
     }
 
-    /** Добавление новой модификации */
+    /** Добавление новой модификации к продукту */
     public function addModification($code, $name, $price): void
     {
         // получаем список модификаций
@@ -464,6 +469,14 @@ class Product extends ActiveRecord
         return $this->hasMany(CategoryAssignment::class, ['product_id' => 'id']);
     }
 
+    /** Прямая связь на категории через промежуточную таблицу
+     * Для получения всех дополнительных категорий
+     */
+    public function getCategories(): ActiveQuery
+    {
+        return $this->hasMany(Category::class, ['id' => 'category_id'])->via('categoryAssignments');
+    }
+
     public function getValues(): ActiveQuery
     {
         return $this->hasMany(Value::class, ['product_id' => 'id']);
@@ -480,9 +493,19 @@ class Product extends ActiveRecord
         return $this->hasOne(Photo::class, ['id' => 'main_photo_id']);
     }
 
+    public function getTags(): ActiveQuery
+    {
+        return $this->hasMany(Tag::class, ['id' => 'tag_id'])->via('tagAssignments');
+    }
+
     public function getTagAssignments(): ActiveQuery
     {
         return $this->hasMany(TagAssignment::class, ['product_id' => 'id']);
+    }
+
+    public function getRelateds(): ActiveQuery
+    {
+        return $this->hasMany(Product::class, ['id' => 'related_id'])->via('relatedAssignments');
     }
 
     public function getRelatedAssignments(): ActiveQuery
@@ -526,6 +549,17 @@ class Product extends ActiveRecord
         return [
             self::SCENARIO_DEFAULT => self::OP_ALL,
         ];
+    }
+
+    public function beforeDelete(): bool
+    {
+        if (parent::beforeDelete()) {
+            foreach ($this->photos as $photo) {
+                $photo->delete();
+            }
+            return true;
+        }
+        return false;
     }
 
     public function afterSave($insert, $changedAttributes): void

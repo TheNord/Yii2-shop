@@ -4,8 +4,10 @@ namespace shop\forms\manage\Shop\Product;
 
 use shop\entities\Shop\Characteristic;
 use shop\entities\Shop\Product\Product;
+use shop\entities\Shop\Brand;
 use shop\forms\CompositeForm;
 use shop\forms\manage\MetaForm;
+use yii\helpers\ArrayHelper;
 
 /**
  * @property MetaForm $meta
@@ -39,6 +41,11 @@ class ProductEditForm extends CompositeForm
         parent::__construct($config);
     }
 
+    public function brandsList(): array
+    {
+        return ArrayHelper::map(Brand::find()->orderBy('name')->asArray()->all(), 'id', 'name');
+    }
+
     public function rules(): array
     {
         return [
@@ -52,6 +59,6 @@ class ProductEditForm extends CompositeForm
 
     protected function internalForms(): array
     {
-        return ['meta', 'tags', 'values'];
+        return ['meta', 'categories', 'tags', 'values'];
     }
 }

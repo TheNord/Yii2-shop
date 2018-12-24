@@ -72,14 +72,14 @@ class Characteristic extends ActiveRecord
     /** Декодируем поле variants_json при поиске */
     public function afterFind(): void
     {
-        $this->variants = Json::decode($this->getAttribute('variants_json'));
+        $this->variants = array_filter(Json::decode($this->getAttribute('variants_json')));
         parent::afterFind();
     }
 
     /** Кодируем поле variants_json при сохранении */
     public function beforeSave($insert): bool
     {
-        $this->setAttribute('variants_json', Json::encode($this->variants));
+        $this->setAttribute('variants_json', Json::encode(array_filter($this->variants)));
         return parent::beforeSave($insert);
     }
 }

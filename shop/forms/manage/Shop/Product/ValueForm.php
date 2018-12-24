@@ -25,6 +25,11 @@ class ValueForm extends Model
         parent::__construct($config);
     }
 
+    public function variantsList(): array
+    {
+        return $this->_characteristic->variants ? array_combine($this->_characteristic->variants, $this->_characteristic->variants) : [];
+    }
+
     public function rules(): array
     {
         // генерируем валидацию автоматически (тернарно), т.е если поле обязательно, добавляем required
