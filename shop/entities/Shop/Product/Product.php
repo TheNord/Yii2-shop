@@ -483,6 +483,7 @@ class Product extends ActiveRecord
         $this->rating = $amount ? $total / $amount : null;
     }
 
+    /** Отображаем только активные товары */
     public static function find(): ProductQuery
     {
         return new ProductQuery(static::class);
