@@ -5,6 +5,7 @@ namespace common\bootstrap;
 use shop\services\ContactService;
 use yii\base\BootstrapInterface;
 use yii\mail\MailerInterface;
+use yii\caching\Cache;
 
 
 class SetUp implements BootstrapInterface
@@ -23,5 +24,10 @@ class SetUp implements BootstrapInterface
         $container->setSingleton(ContactService::class, [], [
             $app->params['adminEmail']
         ]);
+
+        // подставляем класс через конструктор вместо Yii::$app->cache
+        $container->setSingleton(Cache::class, function () use ($app) {
+            return $app->cache;
+        });
     }
 }

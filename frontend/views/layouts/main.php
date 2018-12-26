@@ -1,6 +1,7 @@
 <?php
 
 /* @var $this \yii\web\View */
+
 /* @var $content string */
 
 use common\widgets\Alert;
@@ -16,8 +17,10 @@ AppAsset::register($this);
 <?php $this->beginPage() ?>
 <!DOCTYPE html>
 <!--[if IE]><![endif]-->
-<!--[if IE 8 ]><html dir="ltr" lang="en" class="ie8"><![endif]-->
-<!--[if IE 9 ]><html dir="ltr" lang="en" class="ie9"><![endif]-->
+<!--[if IE 8 ]>
+<html dir="ltr" lang="en" class="ie8"><![endif]-->
+<!--[if IE 9 ]>
+<html dir="ltr" lang="en" class="ie9"><![endif]-->
 <!--[if (gt IE 9)|!(IE)]><!-->
 <html dir="ltr" lang="en">
 <!--<![endif]-->
@@ -76,7 +79,8 @@ AppAsset::register($this);
                             <li><a href="<?= Html::encode(Url::to(['/auth/auth/login'])) ?>">Login</a></li>
                             <li><a href="<?= Html::encode(Url::to(['/auth/signup/request'])) ?>">Signup</a></li>
                         <?php else: ?>
-                            <li><a href="<?= Html::encode(Url::to(['/auth/auth/logout'])) ?>" data-method="post">Logout</a></li>
+                            <li><a href="<?= Html::encode(Url::to(['/auth/auth/logout'])) ?>"
+                                   data-method="post">Logout</a></li>
                         <?php endif; ?>
                     </ul>
                 </li>
@@ -104,12 +108,14 @@ AppAsset::register($this);
                 </div>
             </div>
             <div class="col-sm-5">
+                <?= Html::beginForm(['/shop/catalog/search'], 'get') ?>
                 <div id="search" class="input-group">
-                    <input type="text" name="search" value="" placeholder="Search" class="form-control input-lg"/>
+                    <input type="text" name="text" value="" placeholder="Search" class="form-control input-lg"/>
                     <span class="input-group-btn">
-    <button type="button" class="btn btn-default btn-lg"><i class="fa fa-search"></i></button>
+    <button type="submit" class="btn btn-default btn-lg"><i class="fa fa-search"></i></button>
   </span>
                 </div>
+                <?= Html::endForm() ?>
             </div>
             <div class="col-sm-3">
                 <div id="cart" class="btn-group btn-block">

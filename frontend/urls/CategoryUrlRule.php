@@ -7,6 +7,7 @@ use shop\readModels\Shop\CategoryReadRepository;
 use yii\base\InvalidParamException;
 use yii\base\Object;
 use yii\helpers\ArrayHelper;
+use yii\caching\Cache;
 use yii\web\UrlNormalizerRedirectException;
 use yii\web\UrlRuleInterface;
 
@@ -20,11 +21,13 @@ class CategoryUrlRule extends Object implements UrlRuleInterface
     public $prefix = 'catalog';
 
     private $repository;
+    private $cache;
 
-    public function __construct(CategoryReadRepository $repository, $config = [])
+    public function __construct(CategoryReadRepository $repository, Cache $cache, $config = [])
     {
         parent::__construct($config);
         $this->repository = $repository;
+        $this->cache = $cache;
     }
 
     /** Парсим реквест */
@@ -36,18 +39,31 @@ class CategoryUrlRule extends Object implements UrlRuleInterface
         if (preg_match('#^' . $this->prefix . '/(.*[a-z])$#is', $request->pathInfo, $matches)) {
             $path = $matches['1'];
 
-            // ищем категорию по последнему слагу
-            if (!$category = $this->repository->findBySlug($this->getPathSlug($path))) {
+            // получаем или создаем запись в кэше, передавая путь и передаем функцию которая будет
+            // вызванна если значение не найдется
+            $result = $this->cache->getOrSet(['category_route', 'path' => $path], function () use ($path) {
+                // ищем категорию по последнему слагу
+                if (!$category = $this->repository->findBySlug($this->getPathSlug($path))) {
+                    // если категория не нашлась возвращаем пустой ид и путь
+                    return ['id' => null, 'path' => null];
+                }
+                // если категория нашлась возвращаем ид и ее путь
+                return ['id' => $category->id, 'path' => $this->getCategoryPath($category)];
+            });
+
+            // выходим если идшник не нашелся
+            if (empty($result['id'])) {
                 return false;
             }
 
-            // если категория нашлась но полученный путь отличается от сгенерированного, редеректим на правильный
-            if ($path != $this->getCategoryPath($category)) {
-                throw new UrlNormalizerRedirectException(['shop/catalog/category', 'id' => $category->id], 301);
+            // если категория нашлась но путь указан ошибочный (/catalog/phones/12x/smartphone ), редеректим на правильный
+            if ($path != $result['path']) {
+                throw new UrlNormalizerRedirectException(['shop/catalog/category', 'id' => $result['id']], 301);
+
             }
 
             // если категория нашлась возвращаем маршрут контроллера и передаем ид категории
-            return ['shop/catalog/category', ['id' => $category->id]];
+            return ['shop/catalog/category', ['id' => $result['id']]];
         }
         return false;
     }
@@ -61,13 +77,22 @@ class CategoryUrlRule extends Object implements UrlRuleInterface
                 throw new InvalidParamException('Empty id.');
             }
 
+            $id = $params['id'];
+
+            $url = $this->cache->getOrSet(['category_route', 'id' => $id], function () use ($id) {
+                if (!$category = $this->repository->find($id)) {
+                    return null;
+                }
+                return $this->getCategoryPath($category);
+            });
+
             // ищем категорию по переданному ид
-            if (!$category = $this->repository->find($params['id'])) {
+            if (!$url) {
                 throw new InvalidParamException('Undefined id.');
             }
 
             // генерируем полный путь добавляя префикс
-            $url = $this->prefix . '/' . $this->getCategoryPath($category);
+            $url = $this->prefix . '/' . $url;
 
             // удаляем идшник из параметров
             unset($params['id']);

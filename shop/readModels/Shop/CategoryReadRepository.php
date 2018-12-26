@@ -20,7 +20,7 @@ class CategoryReadRepository
 
     public function findBySlug($slug): ?Category
     {
-        // Ищем категории с нужным слагом и глубиной больше нуля
+        // Ищем категорию с нужным слагом и глубиной больше нуля
         return Category::find()->andWhere(['slug' => $slug])->andWhere(['>', 'depth', 0])->one();
     }
 
