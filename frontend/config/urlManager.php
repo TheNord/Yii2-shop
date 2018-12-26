@@ -5,6 +5,7 @@ return [
     'hostInfo' => $params['frontendHostInfo'],
     'enablePrettyUrl' => true,
     'showScriptName' => false,
+    'cache' => false,
     'rules' => [
         '' => 'site/index',
         '<_a:about>' => 'site/<_a>',
@@ -16,6 +17,10 @@ return [
         '<_a:login|logout>' => 'auth/auth/<_a>',
 
         'catalog' => 'shop/catalog/index',
+        'catalog/product/<id:\d+>' => 'shop/catalog/product',
+
+        // обработчик ссылок категорий полным адресом со слагами
+        ['class' => 'frontend\urls\CategoryUrlRule'],
 
         'cabinet' => 'cabinet/default/index',
         'cabinet/<_c:[\w\-]+>' => 'cabinet/<_c>/index',

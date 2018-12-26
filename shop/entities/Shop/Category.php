@@ -20,6 +20,8 @@ use yii\db\ActiveRecord;
  * @property Meta $meta
  *
  * @property Category $parent
+ * @property Category[] $parents
+ * @property Category[] $children
  * @property Category $prev
  * @property Category $next
  * @mixin NestedSetsBehavior
@@ -46,6 +48,16 @@ class Category extends ActiveRecord
         $this->title = $title;
         $this->description = $description;
         $this->meta = $meta;
+    }
+
+    public function getSeoTitle(): string
+    {
+        return $this->meta->title ?: $this->getHeadingTile();
+    }
+
+    public function getHeadingTile(): string
+    {
+        return $this->title ?: $this->name;
     }
 
     public static function tableName(): string
