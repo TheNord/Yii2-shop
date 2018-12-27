@@ -40,8 +40,7 @@ $url = Url::to(['product', 'id' => $product->id]);
                 <button type="button" onclick="cart.add('<?= $product->id ?>', '2');"><i
                             class="fa fa-shopping-cart"></i> <span
                             class="hidden-xs hidden-sm hidden-md">Add to Cart</span></button>
-                <button type="button" data-toggle="tooltip" title="Add to Wish List"
-                        onclick="wishlist.add('<?= $product->id ?>');"><i class="fa fa-heart"></i></button>
+                <button type="button" data-toggle="tooltip" title="Add to Wish List" href="<?= Url::to(['/cabinet/wishlist/add', 'id' => $product->id]) ?>" data-method="post"><i class="fa fa-heart"></i></button>
                 <button type="button" data-toggle="tooltip" title="Compare this Product"
                         onclick="compare.add('<?= $product->id ?>');"><i class="fas fa-exchange-alt"></i></button>
             </div>

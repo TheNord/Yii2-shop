@@ -27,6 +27,7 @@ use lhs\Yii2SaveRelationsBehavior\SaveRelationsBehavior;
  * @property string $password write-only password
  *
  * @property Network[] $networks
+ * @property WishlistItem[] $wishlistItems
  */
 class User extends ActiveRecord implements IdentityInterface
 {
@@ -100,6 +101,40 @@ class User extends ActiveRecord implements IdentityInterface
         $this->networks = $networks;
     }
 
+    public function addToWishList($productId): void
+    {
+        // получаем все товары в списке желаний
+        $items = $this->wishlistItems;
+        // проходим циклом и проверяем есть ли товар в списке
+        foreach ($items as $item) {
+            if ($item->isForProduct($productId)) {
+                throw new \DomainException('Item is already added.');
+            }
+        }
+        // добавляем товар
+        $items[] = WishlistItem::create($productId);
+        // обновляем связь
+        $this->wishlistItems = $items;
+    }
+
+    public function removeFromWishList($productId): void
+    {
+        $items = $this->wishlistItems;
+        foreach ($items as $i => $item) {
+            if ($item->isForProduct($productId)) {
+                unset($items[$i]);
+                $this->wishlistItems = $items;
+                return;
+            }
+        }
+        throw new \DomainException('Item is not found.');
+    }
+
+    public function getWishlistItems(): ActiveQuery
+    {
+        return $this->hasMany(WishlistItem::class, ['user_id' => 'id']);
+    }
+
 
     /** User request change password */
     public function requestPasswordReset(): void
@@ -140,9 +175,9 @@ class User extends ActiveRecord implements IdentityInterface
         return [
             TimestampBehavior::className(),
             [
-                // отслеживаем связь networks
+                // отслеживаем связи
                 'class' => SaveRelationsBehavior::className(),
-                'relations' => ['networks'],
+                'relations' => ['networks', 'wishlistItems'],
             ],
         ];
     }
@@ -205,7 +240,7 @@ class User extends ActiveRecord implements IdentityInterface
             return false;
         }
 
-        $timestamp = (int) substr($token, strrpos($token, '_') + 1);
+        $timestamp = (int)substr($token, strrpos($token, '_') + 1);
         $expire = Yii::$app->params['user.passwordResetTokenExpire'];
         return $timestamp + $expire >= time();
     }

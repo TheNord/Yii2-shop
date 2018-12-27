@@ -184,4 +184,20 @@ class ProductReadRepository
             ]
         ]);
     }
+
+    public function getWishList($userId): ActiveDataProvider
+    {
+        // возвращаем провайдер данных
+        return new ActiveDataProvider([
+            // находим все продукты
+            'query' => Product::find()
+                // присваиваем алиас, оставляем только активные
+                ->alias('p')->active('p')
+                // джойним таблицу wishlistItems (INNER JOIN - показываем только общие записи обоих таблиц)
+                ->joinWith('wishlistItems w', false, 'INNER JOIN')
+                // в таблице wishlistItems user_id должен быть равен идшнику переданного пользователя
+                ->andWhere(['w.user_id' => $userId]),
+            'sort' => false,
+        ]);
+    }
 }
