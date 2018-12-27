@@ -2,15 +2,28 @@
 
 namespace shop\readModels\Shop;
 
+use Elasticsearch\Client;
 use shop\entities\Shop\Category;
 use yii\helpers\ArrayHelper;
+use shop\readModels\Shop\views\CategoryView;
 
 class CategoryReadRepository
 {
+    private $client;
+    public function __construct(Client $client)
+    {
+        $this->client = $client;
+    }
+
     /** Получаем главную категорию, для вывода всех рубрик */
     public function getRoot(): Category
     {
         return Category::find()->roots()->one();
+    }
+
+    public function getAll(): array
+    {
+        return Category::find()->andWhere(['>', 'depth', 0])->orderBy('lft')->all();
     }
 
     public function find($id): ?Category
@@ -44,6 +57,23 @@ class CategoryReadRepository
             $query->andWhere(['depth' => 1]);
         }
 
-        return $query->all();
+        $aggs = $this->client->search([
+            'index' => 'shop',
+            'type' => 'products',
+            'body' => [
+                'size' => 0,
+                'aggs' => [
+                    'group_by_category' => [
+                        'terms' => [
+                            'field' => 'categories',
+                        ]
+                    ]
+                ],
+            ],
+        ]);
+        $counts = ArrayHelper::map($aggs['aggregations']['group_by_category']['buckets'], 'key', 'doc_count');
+        return array_map(function (Category $category) use ($counts) {
+            return new CategoryView($category, ArrayHelper::getValue($counts, $category->id, 0));
+        }, $query->all());
     }
 }
