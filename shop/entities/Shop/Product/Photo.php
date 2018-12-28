@@ -58,6 +58,7 @@ class Photo extends ActiveRecord
                     'admin' => ['width' => 100, 'height' => 70],
                     'thumb' => ['width' => 640, 'height' => 480],
                     'cart_list' => ['width' => 150, 'height' => 150],
+                    'cart_widget_list' => ['width' => 57, 'height' => 57],
                     // размер картинки для вывода в каталоге, пример использования
                     // <img src="<?= Html::encode($product->mainPhoto->getThumbFileUrl('file', 'catalog_list'))" class="img-responsive"/>
                     'catalog_list' => ['width' => 228, 'height' => 228],
