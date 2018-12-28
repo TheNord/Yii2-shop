@@ -25,6 +25,10 @@ class CartService
     /** Добавление товара в корзину */
     public function add($productId, $modificationId, $quantity): void
     {
+        if ($quantity <= 0) {
+            throw new \DomainException('Invalid amount of product.');
+        }
+
         // находим товар в бд
         $product = $this->products->get($productId);
         // проверяем на наличие подификации, если есть добавляем выбранную
@@ -37,6 +41,10 @@ class CartService
     /** Изменение количества товара */
     public function set($id, $quantity): void
     {
+        if ($quantity <= 0) {
+            throw new \DomainException('Invalid amount of product.');
+        }
+
         $this->cart->set($id, $quantity);
     }
 

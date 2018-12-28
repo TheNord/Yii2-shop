@@ -6,6 +6,7 @@ use Elasticsearch\Client;
 use Elasticsearch\ClientBuilder;
 use shop\cart\Cart;
 use shop\cart\cost\calculator\SimpleCost;
+use shop\cart\cost\calculator\DynamicCost;
 use shop\cart\storage\SessionStorage;
 use shop\services\ContactService;
 use yii\base\BootstrapInterface;
@@ -43,7 +44,7 @@ class SetUp implements BootstrapInterface
                 // в качестве хранилища выбираем сессии, ключ под которым будем сохранять cart
                 new SessionStorage('cart'),
                 // калькулятор стоимости
-                new SimpleCost()
+                new DynamicCost(new SimpleCost())
             );
         });
 

@@ -14,6 +14,7 @@ final class Cost
         $this->discounts = $discounts;
     }
 
+    /** Возвращаем цену с добавленными дискаунтами */
     public function withDiscount(Discount $discount): self
     {
         return new static($this->value, array_merge($this->discounts, [$discount]));
