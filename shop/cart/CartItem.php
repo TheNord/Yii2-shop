@@ -37,6 +37,11 @@ class CartItem
         return $this->product;
     }
 
+    public function getModificationId(): ?Modification
+    {
+        return $this->modificationId;
+    }
+
     /** Получение выбранной модификации товара (для вывода в шаблоне корзины) */
     public function getModification(): ?Modification
     {

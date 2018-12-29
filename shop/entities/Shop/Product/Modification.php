@@ -34,6 +34,15 @@ class Modification extends ActiveRecord
         $this->quantity = $quantity;
     }
 
+    /** Убираем нужное количество товара */
+    public function checkout($quantity): void
+    {
+        if ($quantity > $this->quantity) {
+            throw new \DomainException('Only ' . $this->quantity . ' items are available.');
+        }
+        $this->quantity -= $quantity;
+    }
+
     public function isIdEqualTo($id)
     {
         return $this->id == $id;
