@@ -41,7 +41,11 @@ class OrderService
         $this->transaction = $transaction;
     }
 
-    // передаем ид пользователя и форму оформления заказа
+    /**
+     * Оформляем (формируем) заказ
+     *
+     * передаем ид пользователя и форму оформления заказа
+     */
     public function checkout($userId, OrderForm $form): Order
     {
         $user = $this->users->get($userId);

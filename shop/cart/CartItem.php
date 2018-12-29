@@ -37,7 +37,7 @@ class CartItem
         return $this->product;
     }
 
-    public function getModificationId(): ?Modification
+    public function getModificationId(): int
     {
         return $this->modificationId;
     }
