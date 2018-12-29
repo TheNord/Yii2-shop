@@ -6,6 +6,7 @@
 use shop\helpers\PriceHelper;
 use yii\helpers\Html;
 use yii\helpers\Url;
+use shop\helpers\WeightHelper;
 
 $this->title = 'Shopping Cart';
 $this->params['breadcrumbs'][] = ['label' => 'Catalog', 'url' => ['/shop/catalog/index']];
@@ -90,6 +91,10 @@ $this->params['breadcrumbs'][] = $this->title;
                 <tr>
                     <td class="text-right"><strong>Total:</strong></td>
                     <td class="text-right"><?= PriceHelper::format($cost->getTotal()) ?></td>
+                </tr>
+                <tr>
+                    <td class="text-right"><strong>Weight:</strong></td>
+                    <td class="text-right"><?= WeightHelper::format($cart->getWeight()) ?></td>
                 </tr>
             </table>
         </div>
