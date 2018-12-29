@@ -14,6 +14,9 @@ class CartItem
     /** Получаем выбранный продукт, ид модификации и количество продукта */
     public function __construct(Product $product, $modificationId, $quantity)
     {
+        if (!$product->canBeCheckout($modificationId, $quantity)) {
+            throw new \DomainException('Quantity is too big.');
+        }
         $this->product = $product;
         $this->modificationId = $modificationId;
         $this->quantity = $quantity;
@@ -59,6 +62,12 @@ class CartItem
         }
         // если модификации нет возвращаем стоимость товара
         return $this->product->price_new;
+    }
+
+    /** Получаем суммарный вес товара */
+    public function getWeight(): int
+    {
+        return $this->product->weight * $this->quantity;
     }
 
     /** Получение стоимости товара (с учетом количества) */

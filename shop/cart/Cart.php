@@ -115,6 +115,17 @@ class Cart
         return $this->calculator->getCost($this->items);
     }
 
+    /** Получаем вес всех товаров */
+    public function getWeight(): int
+    {
+        $this->loadItems();
+        // через аррай_мап применяем составляем массив из всех элементов корзины
+        // и получаем у них их вес, после складываем
+        return array_sum(array_map(function (CartItem $item) {
+            return $item->getWeight();
+        }, $this->items));
+    }
+
     /** Загрузка списка товаров из хранилища */
     private function loadItems(): void
     {

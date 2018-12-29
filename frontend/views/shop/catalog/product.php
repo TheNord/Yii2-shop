@@ -40,14 +40,15 @@ MagnificPopupAsset::register($this);
                 <?php if ($i == 0): ?>
                     <li>
                         <a class="thumbnail" href="<?= $photo->getThumbFileUrl('file', 'catalog_origin') ?>">
-                        <img src="<?= $photo->getThumbFileUrl('file', 'catalog_product_main') ?>"
+                            <img src="<?= $photo->getThumbFileUrl('file', 'catalog_product_main') ?>"
                                  alt="<?= Html::encode($product->name) ?>"/>
                         </a>
                     </li>
                 <?php else: ?>
                     <li class="image-additional">
-                        <a class="thumbnail" href="<?= $photo->getThumbFileUrl('file', 'catalog_origin') ?>" title="HP LP3065">
-                        <img src="<?= $photo->getThumbFileUrl('file', 'catalog_product_additional') ?>" alt=""/>
+                        <a class="thumbnail" href="<?= $photo->getThumbFileUrl('file', 'catalog_origin') ?>"
+                           title="HP LP3065">
+                            <img src="<?= $photo->getThumbFileUrl('file', 'catalog_product_additional') ?>" alt=""/>
                         </a>
                     </li>
                 <?php endif; ?>
@@ -105,7 +106,9 @@ MagnificPopupAsset::register($this);
     </div>
     <div class="col-sm-4">
         <p class="btn-group">
-            <button type="button" data-toggle="tooltip" class="btn btn-default" title="Add to Wish List" href="<?= Url::to(['/cabinet/wishlist/add', 'id' => $product->id]) ?>" data-method="post"><i class="fa fa-heart"></i></button>
+            <button type="button" data-toggle="tooltip" class="btn btn-default" title="Add to Wish List"
+                    href="<?= Url::to(['/cabinet/wishlist/add', 'id' => $product->id]) ?>" data-method="post"><i
+                        class="fa fa-heart"></i></button>
             <button type="button" data-toggle="tooltip" class="btn btn-default" title="Compare this Product"
                     onclick="compare.add('47');"><i class="fa fas fa-exchange-alt"></i></button>
         </p>
@@ -128,8 +131,11 @@ MagnificPopupAsset::register($this);
             </li>
         </ul>
         <div id="product">
+            <?php if ($product->isAvailable()): ?>
+
             <hr>
             <h3>Available Options</h3>
+
             <?php $form = ActiveForm::begin([
                 'action' => ['/shop/cart/add', 'id' => $product->id],
             ]) ?>
@@ -139,10 +145,20 @@ MagnificPopupAsset::register($this);
             <?php endif; ?>
 
             <?= $form->field($cartForm, 'quantity')->textInput() ?>
+
             <div class="form-group">
                 <?= Html::submitButton('Add to Cart', ['class' => 'btn btn-primary btn-lg btn-block']) ?>
             </div>
+
             <?php ActiveForm::end() ?>
+
+            <?php else: ?>
+
+                <div class="alert alert-danger">
+                    The product is not available for purchasing right now.<br />Add it to your wishlist.
+                </div>
+
+            <?php endif; ?>
         </div>
         <div class="rating">
             <p>

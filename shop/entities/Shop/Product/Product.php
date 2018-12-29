@@ -28,6 +28,8 @@ use yii\web\UploadedFile;
  * @property integer $main_photo_id
  * @property string $description
  * @property integer $status
+ * @property integer $weight
+ * @property integer $quantity
  *
  * @property Meta $meta
  * @property Brand $brand
@@ -50,7 +52,7 @@ class Product extends ActiveRecord
 
     public $meta;
 
-    public static function create($brandId, $categoryId, $code, $name, $description, Meta $meta): self
+    public static function create($brandId, $categoryId, $code, $name, $description, $weight, $quantity, Meta $meta): self
     {
         $product = new static();
         $product->brand_id = $brandId;
@@ -58,19 +60,33 @@ class Product extends ActiveRecord
         $product->code = $code;
         $product->name = $name;
         $product->description = $description;
+        $product->weight = $weight;
+        $product->quantity = $quantity;
         $product->meta = $meta;
         $product->status = self::STATUS_DRAFT;
         $product->created_at = time();
         return $product;
     }
 
-    public function edit($brandId, $code, $name, $description, Meta $meta): void
+    public function edit($brandId, $code, $name, $description, $weight, Meta $meta): void
     {
         $this->brand_id = $brandId;
         $this->code = $code;
         $this->name = $name;
         $this->description = $description;
+        $this->weight = $weight;
         $this->meta = $meta;
+    }
+
+    /** Изменение количества товара на складе */
+    public function setQuantity($quantity): void
+    {
+        // если у товара есть модификации то запрещаем изменять количество
+        // напрямую, менять нужно только у модификаций
+        if ($this->modifications) {
+            throw new \DomainException('Change modifications quantity.');
+        }
+        $this->quantity = $quantity;
     }
 
     public function activate(): void
@@ -97,6 +113,30 @@ class Product extends ActiveRecord
     public function isDraft(): bool
     {
         return $this->status == self::STATUS_DRAFT;
+    }
+
+    public function isAvailable(): bool
+    {
+        return $this->quantity > 0;
+    }
+
+    /** Проверка на возможность редактирования количества товара
+     * Если у товара нет модификаций возвращаем true
+     */
+    public function canChangeQuantity(): bool
+    {
+        return !$this->modifications;
+    }
+
+    /** Проверка на возможность добавления в корзину товара по его количеству */
+    public function canBeCheckout($modificationId, $quantity): bool
+    {
+        // если модификация переданна, проверяем что количество меньше либо равному тому что имеется
+        // у выбранной модификации
+        if ($modificationId) {
+            return $quantity <= $this->getModification($modificationId)->quantity;
+        }
+        return $quantity <= $this->quantity;
     }
 
     public function setPrice($new, $old): void
@@ -366,7 +406,7 @@ class Product extends ActiveRecord
     }
 
     /** Добавление новой модификации к продукту */
-    public function addModification($code, $name, $price): void
+    public function addModification($code, $name, $price, $quantity): void
     {
         // получаем список модификаций
         $modifications = $this->modifications;
@@ -377,18 +417,18 @@ class Product extends ActiveRecord
             }
         }
         // создаем новую модификацию
-        $modifications[] = Modification::create($code, $name, $price);
+        $modifications[] = Modification::create($code, $name, $price, $quantity);
         // прокидываем в поведение
-        $this->modifications = $modifications;
+        $this->updateModifications($modifications);
     }
 
-    public function editModification($id, $code, $name, $price): void
+    public function editModification($id, $code, $name, $price , $quantity): void
     {
         $modifications = $this->modifications;
         foreach ($modifications as $i => $modification) {
             if ($modification->isIdEqualTo($id)) {
-                $modification->edit($code, $name, $price);
-                $this->modifications = $modifications;
+                $modification->edit($code, $name, $price, $quantity);
+                $this->updateModifications($modifications);
                 return;
             }
         }
@@ -401,12 +441,23 @@ class Product extends ActiveRecord
         foreach ($modifications as $i => $modification) {
             if ($modification->isIdEqualTo($id)) {
                 unset($modifications[$i]);
-                $this->modifications = $modifications;
+                $this->updateModifications($modifications);
                 return;
             }
         }
         throw new \DomainException('Modification is not found.');
     }
+
+    private function updateModifications(array $modifications): void
+    {
+        // изменяем модификацию
+        $this->modifications = $modifications;
+        // обновляем количество товара суммируя количество у всех модификаций
+        $this->quantity = array_sum(array_map(function (Modification $modification) {
+            return $modification->quantity;
+        }, $this->modifications));
+    }
+
 
     // Отзывы
 

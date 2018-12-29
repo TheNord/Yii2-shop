@@ -22,11 +22,16 @@ class CategoriesWidget extends Widget
 
     public function run(): string
     {
+        // после вызова getTreeWithSubsOf, сюда прилетит объект CategoryView, с полями ид категории => количество
+        // проходим по нему циклом применяя коллбэк
+        // извлекаем категорию через $view->category (берем глубину)
+        // извлекаем число товаров через $view->count
         return Html::tag('div', implode(PHP_EOL, array_map(function (CategoryView $view) {
             // добавляем пробелов в зависимости от глубины вложенности, добавляем дефис
             $indent = ($view->category->depth > 1 ? str_repeat('&nbsp;&nbsp;&nbsp;', $view->category->depth - 1) . '- ' : '');
             // делаем проверку на активность текущей рубрики, если активная категория не задана, назначаем активной дочернюю категорию
             $active = $this->active && ($this->active->id == $view->category->id || $this->active->isChildOf($view->category));
+
             return Html::a(
             // выводим отступ, название рубрики, ссылку на рубрику, количество товаров и проставляем активность
                 $indent . Html::encode($view->category->name) . ' (' . $view->count . ')',
