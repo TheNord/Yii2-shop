@@ -57,21 +57,35 @@ class CategoryReadRepository
             $query->andWhere(['depth' => 1]);
         }
 
+        // данный запрос выведет в массиве buckets по какому значению (ид категории) => сколько товаров нашлось
         $aggs = $this->client->search([
             'index' => 'shop',
             'type' => 'products',
             'body' => [
+                // size 0 указываем чтобы ES не выводил товары,
+                // а лишь собраль аггрегирующую информацию
                 'size' => 0,
                 'aggs' => [
+                    // название аггрегата для дальнейшей работы
                     'group_by_category' => [
+                        // ищем по точному совпадению
                         'terms' => [
+                            // считаем по полю categories
                             'field' => 'categories',
                         ]
                     ]
                 ],
             ],
         ]);
+
+        // проходим аррайхелпером по массиву buckets, чтобы ключами массива оказалось
+        // поле key => а значением doc_count
         $counts = ArrayHelper::map($aggs['aggregations']['group_by_category']['buckets'], 'key', 'doc_count');
+
+        // применяем каллбэк к каждому элементу массива
+        // возвращаем объект-значение CategoryView передавая ему ид категории
+        // и количество товаров в нем (для удобства)
+        // через аррайхелпер getValue, передавая ему массив результатов и ид текущей категории
         return array_map(function (Category $category) use ($counts) {
             return new CategoryView($category, ArrayHelper::getValue($counts, $category->id, 0));
         }, $query->all());

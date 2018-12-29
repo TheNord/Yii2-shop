@@ -2,19 +2,30 @@
 
 namespace shop\readModels\Shop;
 
+use Elasticsearch\Client;
 use shop\entities\Shop\Brand;
 use shop\entities\Shop\Category;
 use shop\entities\Shop\Product\Product;
-use shop\entities\Shop\Product\Value;
 use shop\entities\Shop\Tag;
 use shop\forms\Shop\Search\SearchForm;
+use shop\forms\Shop\Search\ValueForm;
 use yii\data\ActiveDataProvider;
 use yii\data\DataProviderInterface;
+use yii\data\Pagination;
+use yii\data\Sort;
 use yii\db\ActiveQuery;
+use yii\db\Expression;
 use yii\helpers\ArrayHelper;
 
 class ProductReadRepository
 {
+    private $client;
+
+    public function __construct(Client $client)
+    {
+        $this->client = $client;
+    }
+
     /** Получение всех товаров с главным фото */
     public function getAll(): DataProviderInterface
     {
@@ -103,85 +114,108 @@ class ProductReadRepository
 
     public function search(SearchForm $form): DataProviderInterface
     {
-        // получаем все товары с жадной загрузкой категории и главного фото
-        $query = Product::find()->alias('p')->active('p')->with('mainPhoto', 'category');
+        // создаем пагинацию
+        $pagination = new Pagination([
+            // выводим до 100 элементов
+            'pageSizeLimit' => [15, 100],
+            // отключаем валидацию страницы
+            'validatePage' => false,
+        ]);
 
-        // если указан бренд выводим и его
-        if ($form->brand) {
-            $query->andWhere(['p.brand_id' => $form->brand]);
-        }
+        // создаем сортировщика
+        $sort = new Sort([
+            'defaultOrder' => ['id' => SORT_DESC],
+            'attributes' => [
+                'id',
+                'name',
+                'price',
+                'rating',
+            ],
+        ]);
 
-        // если указали категорию - добавляем в выборку категорию
-        if ($form->category) {
-            if ($category = Category::findOne($form->category)) {
-                $ids = ArrayHelper::merge([$form->category], $category->getChildren()->select('id')->column());
-                $query->joinWith(['categoryAssignments ca'], false);
-                $query->andWhere(['or', ['p.category_id' => $ids], ['ca.category_id' => $ids]]);
-            } else {
-                $query->andWhere(['p.id' => 0]);
-            }
-        }
-
-        if ($form->values) {
-            $productIds = null;
-            // проходим по заполненным значениям
-            foreach ($form->values as $value) {
-                if ($value->isFilled()) {
-                    // находим в промежуточной таблице характеристики с нужным нам ид
-                    // прим: если ищем по весу то: "найди все значения,
-                    // у которых characteristic_id = значению веса (идшнику)"
-                    $q = Value::find()->andWhere(['characteristic_id' => $value->getId()]);
-
-                    // если из формы пришло from и to то ищем на значение больше/меньше или равно
-                    // value AS SIGNED - приводим значение values к целому со знаком
-                    $q->andFilterWhere(['>=', 'CAST(value AS SIGNED)', $value->from]);
-                    $q->andFilterWhere(['<=', 'CAST(value AS SIGNED)', $value->to]);
-                    // если из формы пришло $value->equal, сравниваем на равенство
-                    $q->andFilterWhere(['value' => $value->equal]);
-
-                    // выбираем из таблицы поле product_id
-                    // прим.продолжение.: "...и найди все идшники товаров у которых совпали значения)
-                    $foundIds = $q->select('product_id')->column();
-                    // сохраняем идшники и повторяем цикл
-                    // array_intersect используем чтобы из двух массивов найти пересекающиеся значения
-                    // после всех циклов (например по 5 атрибутам) в $productIds останутся только те ид
-                    // которые нашлись для каждого из этих 5 товаров
-                    // выводим только те продукты которые удовлетворяют всем условиям поиска
-                    $productIds = $productIds === null ? $foundIds : array_intersect($productIds, $foundIds);
-                }
-            }
-            if ($productIds !== null) {
-                $query->andWhere(['p.id' => $productIds]);
-            }
-        }
-
-        // поиск по тексу, ищем либо по коду товара либо по названию
-        if (!empty($form->text)) {
-            $query->andWhere(['or', ['like', 'code', $form->text], ['like', 'name', $form->text]]);
-        }
-
-        // группируем значения чтобы при джойнах не было проблем
-        $query->groupBy('p.id');
-
-        return new ActiveDataProvider([
-            'query' => $query,
-            'sort' => [
-                'defaultOrder' => ['id' => SORT_DESC],
-                'attributes' => [
-                    'id' => [
-                        'asc' => ['p.id' => SORT_ASC],
-                        'desc' => ['p.id' => SORT_DESC],
-                    ],
-                    'name' => [
-                        'asc' => ['p.name' => SORT_ASC],
-                        'desc' => ['p.name' => SORT_DESC],
-                    ],
-                    'price' => [
-                        'asc' => ['p.price_new' => SORT_ASC],
-                        'desc' => ['p.price_new' => SORT_DESC],
+        $response = $this->client->search([
+            'index' => 'shop',
+            'type' => 'products',
+            'body' => [
+                // отключаем вывод всех данных, оставляем только id
+                '_source' => ['id'],
+                // задаем паджинаторы
+                'from' => $pagination->getOffset(),
+                'size' => $pagination->getLimit(),
+                // задаем сортировку
+                'sort' => array_map(function ($attribute, $direction) {
+                    return [$attribute => ['order' => $direction === SORT_ASC ? 'asc' : 'desc']];
+                }, array_keys($sort->getOrders()), $sort->getOrders()),
+                'query' => [
+                    // оборачиваем в bool => must если у нас несколько запросов
+                    'bool' => [
+                        // склеиваем полученные после фильтров запросы
+                        'must' => array_merge(
+                            // через array_filter откинем пустые элементы (фильтры)
+                            array_filter([
+                                // если категория указана делаем точный поиск (совпадение)
+                                // через 'term' => и ищем по ид категории из формы
+                                !empty($form->category) ? ['term' => ['categories' => $form->category]] : false,
+                                !empty($form->brand) ? ['term' => ['brand' => $form->brand]] : false,
+                                // multi_match - поиск по множеству полей
+                                !empty($form->text) ? ['multi_match' => [
+                                    'query' => $form->text,
+                                    // указываем множетель ^3 у поля name, для указания его важности (веса)
+                                    'fields' => [ 'name^3', 'description' ]
+                                ]] : false,
+                            ]),
+                            // через array_map формируем массив nested для каждого элемента в системе
+                            array_map(function (ValueForm $value) {
+                                // если ищем во вложенных элементах то указываем 'nested'
+                                return ['nested' => [
+                                    'path' => 'values',
+                                    'query' => [
+                                        'bool' => [
+                                            'must' => array_filter([
+                                                // характеристика должна совпадать с ид характеристики
+                                                ['match' => ['values.characteristic' => $value->getId()]],
+                                                // текстовое значение характеристики должно совпадать с текстом значения
+                                                !empty($value->equal) ? ['match' => ['values.value_string' => $value->equal]] : false,
+                                                // проверяем что значение должно быть большее значения от (from)
+                                                !empty($value->from) ? ['range' => ['values.value_int' => ['gte' => $value->from]]] : false,
+                                                // и меньше значения до (to)
+                                                !empty($value->to) ? ['range' => ['values.value_int' => ['lte' => $value->to]]] : false,
+                                            ]),
+                                        ],
+                                    ],
+                                ]];
+                                // передаем из формы значения
+                                // через array_filter фильтруем только те которые заполненны isFilled
+                            }, array_filter($form->values, function (ValueForm $value) { return $value->isFilled(); }))
+                        )
                     ],
                 ],
-            ]
+            ],
+        ]);
+
+        // получаем идшники из результата поиска
+        $ids = ArrayHelper::getColumn($response['hits']['hits'], '_source.id');
+
+        // получаем продукты по полученным идшникам
+        if ($ids) {
+            $query = Product::find()
+                ->active()
+                ->with('mainPhoto')
+                ->andWhere(['id' => $ids])
+                // сортируем в виде: ORDER BY FIELD(id, 5, 2, 7, 78, 14)
+                // имплодим идшники через запятую
+                // оборачиваем в Yii DB Expression чтобы не экранировались значения через фильтры
+                ->orderBy(new Expression('FIELD(id,' . implode(',', $ids) . ')'));
+        } else {
+            $query = Product::find()->andWhere(['id' => 0]);
+        }
+
+        return new SimpleActiveDataProvider([
+            'query' => $query,
+            // указываем общее число найденных элементов
+            'totalCount' => $response['hits']['total'],
+            'pagination' => $pagination,
+            'sort' => $sort,
         ]);
     }
 

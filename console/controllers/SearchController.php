@@ -42,6 +42,7 @@ class SearchController extends Controller
 
         $this->stdout('Creating of index' . PHP_EOL);
 
+        // создаем карту полей, чтобы поиск правильно обрабатывался
         $this->client->indices()->create([
             'index' => 'shop',
             'body' => [
@@ -76,11 +77,13 @@ class SearchController extends Controller
                                 'type' => 'integer',
                             ],
                             'values' => [
+                                // указываем тип nested для вложенного массива полей
                                 'type' => 'nested',
                                 'properties' => [
                                     'characteristic' => [
                                         'type' => 'integer'
                                     ],
+                                    // тип кейворд, для поиска по точному совпадению
                                     'value_string' => [
                                         'type' => 'keyword',
                                     ],
@@ -114,15 +117,20 @@ class SearchController extends Controller
                 'body' => [
                     'id' => $product->id,
                     'name' => $product->name,
+                    // удаляем все тэги чтобы пользователь не мог искать по ним
                     'description' => strip_tags($product->description),
                     'price' => $product->price_new,
                     'rating' => $product->rating,
                     'brand' => $product->brand_id,
-                    // в категории записываем массив из идшников
+                    // в категории записываем массив из всех идшников категорий товара (родителей)
                     'categories' => ArrayHelper::merge(
+                        // получаем ид главной категории
                         [$product->category->id],
+                        // находим всех родителей, получаем их идшники
                         ArrayHelper::getColumn($product->category->parents, 'id'),
+                        // находим все дополнительные категории
                         ArrayHelper::getColumn($product->categories, 'id'),
+                        // проходим циклом по всем дополнительным категориям и находим их родителей
                         array_reduce(array_map(function (Category $category) {
                             return ArrayHelper::getColumn($category->parents, 'id');
                         }, $product->categories), 'array_merge', [])
@@ -130,6 +138,7 @@ class SearchController extends Controller
                     'tags' => ArrayHelper::getColumn($product->tagAssignments, 'tag_id'),
                     // для упрощенной записи записываем характеристики и в строку и в число
                     // строке не будет переведена в число, не нужно возиться с разделением вручную
+                    // берем все значения ($product->values) и проходим циклом через array_map и строим от каждого запись
                     'values' => array_map(function (Value $value) {
                         return [
                             'characteristic' => $value->characteristic_id,
