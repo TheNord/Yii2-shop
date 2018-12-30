@@ -1,6 +1,7 @@
 <?php
 /* @var $this \yii\web\View */
 
+use frontend\widgets\Blog\LastPostsWidget;
 use frontend\widgets\FeaturedProductsWidget;
 
 /* @var $content string */
@@ -24,6 +25,12 @@ use frontend\widgets\FeaturedProductsWidget;
             <h3>Featured</h3>
 
             <?= FeaturedProductsWidget::widget([
+                'limit' => 4,
+            ]) ?>
+
+            <h3>Last Posts</h3>
+
+            <?= LastPostsWidget::widget([
                 'limit' => 4,
             ]) ?>
 
