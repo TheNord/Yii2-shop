@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "eedea8839212cbc0171399155d2ae93b",
+    "content-hash": "1e6c8ed829e8c65c6d0e9114f936763e",
     "packages": [
         {
             "name": "almasaeed2010/adminlte",
@@ -2576,6 +2576,51 @@
                 "validate"
             ],
             "time": "2018-01-29T19:49:41+00:00"
+        },
+        {
+            "name": "yii-cms/yii2-robokassa",
+            "version": "1.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/yii-cms/yii2-robokassa.git",
+                "reference": "7558c1098d75d1aad81117dfe368da8ea484d52a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/yii-cms/yii2-robokassa/zipball/7558c1098d75d1aad81117dfe368da8ea484d52a",
+                "reference": "7558c1098d75d1aad81117dfe368da8ea484d52a",
+                "shasum": ""
+            },
+            "require": {
+                "yiisoft/yii2": "~2.0.13"
+            },
+            "type": "yii2-extension",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.2.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "robokassa\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Sergey Gonimar",
+                    "email": "sergey.gonimar@gmail.com"
+                }
+            ],
+            "description": "Robokassa payment extension.",
+            "keywords": [
+                "robokassa",
+                "yii2"
+            ],
+            "time": "2018-06-19T21:07:55+00:00"
         },
         {
             "name": "yii-dream-team/yii2-upload-behavior",
