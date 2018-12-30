@@ -26,7 +26,7 @@ class CommentService
         $comment = $post->addComment($user->id, $form->parentId, $form->text);
 
         $this->posts->save($post);
-        
+
         return $comment;
     }
 }
